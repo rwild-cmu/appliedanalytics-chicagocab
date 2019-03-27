@@ -9,6 +9,7 @@
 % is archived at http://www.jmlr.org/format/natbib.pdf
 
 \usepackage{jmlr2e}
+\usepackage{tabularx}
 %\usepackage{parskip}
 
 % Definitions of handy macros can go here
@@ -39,11 +40,22 @@ The taxi business in Chicago generates more than \$400 million yearly from 27 mi
 
 Different cities have published taxi trips datasets, which usually contain geo-referenced, timestamp information, along with fare costs, distance, and time traveled for each trip. The granularity of the data allows making predictions that are useful for businesses. For instance, based on data from Porto, Portugal, the Taxi Trip Time Prediction Challenge run by Kaggle aimed to predicted the final destination along with the total traveling time of taxi trips based on their initial trajectories. As most drivers do not report their final destination, the prediction helped the taxi central to optimize the efficiency of their electronic dispatch system, see \cite{TaxiTravelTime}. Also, a taxi app dataset in China was used to predict the number of taxi-calling requirements submitted per time and region. This prediction would allow an online taxicab platform to predict its demands better, and hence efficiently dispatch idle taxis, see \cite{TaxiDemand2}. Similar approaches have been conducted to predict the density of taxi pickups and drop-off locations in New York City on an hourly basis, see \cite{NYCTaxi}. Our analysis will contribute to existing work by building a machine learning model that will predict the drivers' revenue allowing to distinguish the best behavior they could follow to increase their profits.\par
 
-We will use the Chicago Taxi Trips dataset, which has approx. 90 million rows, each representing a single taxi ride in Chicago, see \cite{ChicagoDataPortal}. However, to allow reasonable computation times, we will only use observations from 2016. The available information for each ride is the ID of the taxi, time data, distance, the company, pickup and dropoff location, and payment details (fare, tips, tolls, extras, total, payment type). We will complement the dataset with the hourly weather information at the county level based on the National Oceanic and Atmospheric Administration's Local Climatological Data, see \cite{NOAA}. For the purpose of this analysis, the dataset will be aggregated to represent the driving behavior for each driver in each week. Our analysis will consider:\\ \\
-\textbf{Outcome:} Revenue (fare aggregated by driver and week)\\
-\textbf{Treatment:} Number of rides on each weekday, rides per time of day, rides per pickup location, hours worked per day\\
-\textbf{Covariates:} Taxi company, weather conditions per day of the week (i.e., precipitation and temperature)\\ 
-\textbf{Population:} Taxi trips in Chicago in 2016\par
+We will use the Chicago Taxi Trips dataset, which has approx. 90 million rows, each representing a single taxi ride in Chicago, see \cite{ChicagoDataPortal}. However, to allow reasonable computation times, we will only use observations from 2016. The available information for each ride is the ID of the taxi, time data, distance, the company, pickup and dropoff location, and payment details (fare, tips, tolls, extras, total, payment type). We will complement the dataset with the hourly weather information at the county level based on the National Oceanic and Atmospheric Administration's Local Climatological Data, see \cite{NOAA}. For the purpose of this analysis, the dataset will be aggregated to represent the driving behavior for each driver in each week. Our analysis will consider:
+
+\begin{table}[h]
+\centering
+\begin{tabularx}{14cm}{|l|X|}
+\hline
+Outcome & Revenue (fare aggregated by driver and week)\\
+\hline
+Treatment & Number of rides on each weekday, rides per time of day, rides per pickup location, hours worked per day\\
+\hline
+Covariates &  Taxi company, weather conditions per day of the week (i.e., precipitation and temperature)\\
+\hline
+Population & Taxi trips in Chicago in 2016\\
+\hline
+\end{tabularx}
+\end{table}
 
 Due to the numeric outcome variable, evaluation measures, including R square, Mean Absolute Error, Mean Square Error, Root Square Error and Mean Square Prediction Error are appropriate for the analysis. Given the range of our dataset, we consider the Mean Square Prediction Error (MSPE) the most reasonable measure. We will test the models by computing their MSPE for different input variables against our outcome variable.  In the end, we will compare the model's MSPE to evaluate which model performs best. The analysis will use the training set to learn methods and through the test set, we can get the performance estimate for the learned models. A single training set doesn't tell us how sensitive accuracy is to a training sample so we will use cross-validation to include multiple training/test partitions.\par
 
