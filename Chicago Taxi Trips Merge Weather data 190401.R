@@ -1,7 +1,7 @@
 #==================================================================#
 # Applied Analytics: the Machine Learning Pipeline
 # Creation date: April 01, 2019
-# Last modification: April 02, 2019
+# Last modification: April 04, 2019
 # Created by: David Mitre Becerril                                 
 # Objective: Retrieved and process the NOAA weather data for the City of Chicago in 2017
 # Sources used: https://www.ncei.noaa.gov/data/global-hourly/doc/isd-format-document.pdf
@@ -20,7 +20,8 @@ rm(packages)
 
 # 2) Read Chicago taxi trips and merge it with weather data------
 #Read Chicago dataset
-df <- read.csv("data_2017.csv")
+df <- read.csv("data_2016.csv")
+#df <- read.csv("data_2017.csv")
 df$month <- as.integer(substr(df$TripStartTimestamp,1,2))
 df$day <- as.integer(substr(df$TripStartTimestamp,4,5))
 df$hour <- as.integer(substr(df$TripStartTimestamp,12,13))
@@ -30,7 +31,8 @@ df$hour <- ifelse(df$morning%in%"AM" & df$hour==12, 0,
 df$morning <- NULL
 
 #Download the NOAA data
-weather <- lcd("72530094846", year=2017) ##weather station id; only keep the first 20 columns
+weather <- lcd("72530094846", year=2016) ##weather station id; only keep the first 20 columns
+#weather <- lcd("72530094846", year=2017) ##weather station id; only keep the first 20 columns
 weather <- weather %>% select(date, tmp, aa1) %>% as.data.frame()
 
 #Extract hour and month from date field
@@ -68,6 +70,7 @@ df <- base::merge(df, temp, by=c("month", "day", "hour"))
 df <- base::merge(df, temp2, by=c("month", "day"))
 
 #Export file
+write.csv(df, "data_2016_withweather.csv", row.names = FALSE)
 write.csv(df, "data_2017_withweather.csv", row.names = FALSE)
 
 
