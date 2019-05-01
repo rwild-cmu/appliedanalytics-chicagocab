@@ -3,7 +3,7 @@ library(keras)
 library(readr)
 library(ggplot2)
 
-data = read.csv("/home/raphael/Documents/AppliedAnalytics/Project/weekly_stats_2017_nonzero_perc.csv") %>% select(-X,-sampleId,-company)
+data = read.csv("/home/raphael/Documents/AppliedAnalytics/Project/weekly_stats_2017_nonzero_perc.csv") %>% dplyr::select(-X,-sampleId,-company)
 
 ###remove outliers###
 quantiles = quantile(data$revenue)
@@ -32,13 +32,23 @@ model %>% compile(
   metrics = 'mape'
 )
 
+inner_epochs = 40
+early_stopping = callback_early_stopping(monitor = "val_loss",
+                                         patience = inner_epochs/2)
+
 model %>% fit(
-  x = train_data %>% select(-revenue) %>% as.matrix(),
-  y = train_data %>% select(revenue) %>% as.matrix(),
-  epochs = 20, shuffle = T)
+  x = train_data %>% dplyr::select(-revenue) %>% as.matrix(),
+  y = train_data %>% dplyr::select(revenue) %>% as.matrix(),
+  epochs = inner_epochs,
+  shuffle = T,
+  callbacks = c(early_stopping),
+  validation_split = 0.2)
 
 ###test neural network###
-model %>% evaluate(x = test_data %>% select(-revenue) %>% as.matrix(), y = test_data %>% select(revenue) %>% as.matrix())
-((model %>% predict_on_batch(test_data %>% select(-revenue) %>% as.matrix()) - test_data$revenue)/test_data$revenue) %>% head(100) %>% plot()
+model %>% evaluate(x = test_data %>% dplyr::select(-revenue) %>% as.matrix(), y = test_data %>% dplyr::select(revenue) %>% as.matrix())
+((model %>% predict_on_batch(test_data %>% dplyr::select(-revenue) %>% as.matrix()) - test_data$revenue)/test_data$revenue) %>% head(100) %>% plot()
+
+data2 = read.csv("/home/raphael/Documents/AppliedAnalytics/Project/weekly_stats_2017_nonzero.csv") %>% select(-X,-sampleId,-company)
+model %>% evaluate(x = data2 %>% select(-revenue) %>% as.matrix(), y = data2 %>% select(revenue) %>% as.matrix())
 
                                                                              

@@ -6,7 +6,7 @@ output: html_document
 ---
 
 ```{r}
-dataset <- read.csv("./weekly_stats_nonzero.csv")
+dataset <- read.csv("./weekly_stats_2016_nonzero_perc.csv")
 ```
 
 ```{r}
@@ -34,8 +34,8 @@ newdata <- data.frame(dataset, company_binary)
 # Split data into train and test sets
 n <- nrow(newdata)
 train_rows <- sample(1:n, 0.5*n)
-x <- newdata[c(-1,-2,-3,-4,-5,-48)] %>% data.matrix()
-y <- newdata[c(4)] %>% data.matrix()
+x <- newdata %>% dplyr::select(-X,-sampleId,-company,-revenue,-company.1) %>% data.matrix()
+y <- newdata %>% dplyr::select(revenue) %>% data.matrix()
 x.train <- x[train_rows, ] 
 x.test <- x[-train_rows, ] 
 y.train <- y[train_rows,] 
