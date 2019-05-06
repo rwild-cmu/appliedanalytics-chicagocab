@@ -4,7 +4,6 @@ library(readr)
 library(ggplot2)
 library(fastDummies)
 
-
 prepare_data = function(data){
   company_binary <- fastDummies::dummy_cols(data$company)
   company_binary$.data = NULL
