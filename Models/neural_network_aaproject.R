@@ -2,17 +2,12 @@ library(dplyr)
 library(keras)
 library(readr)
 library(ggplot2)
-library(fastDummies)
 
 prepare_data = function(data){
-  company_binary <- fastDummies::dummy_cols(data$company)
-  company_binary$.data = NULL
-  prepared_data = data[,order(names(data))] %>% select(-company) %>% cbind(company_binary)
-  
   ###remove outliers###
   quantiles = quantile(data$revenue)
   maxval = quantiles[2] + 1.5 * (quantiles[2]-quantiles[1])
-  return(prepared_data %>% filter(revenue <= maxval))
+  return(data %>% filter(revenue <= maxval))
 }
 
 
@@ -65,13 +60,13 @@ data2 = read.csv("/home/raphael/Documents/AppliedAnalytics/Project/weekly_stats_
   select(-X,-sampleId) %>%
   prepare_data()
 
-for(x in setdiff(names(data),names(data2))){
-  data2[x] = rep(0,nrow(data2))
-}
-for(x in setdiff(names(data2),names(data))){
-  data2[x] = NULL
-}
-model %>% evaluate(x = data2[,order(names(data2))] %>% select(-revenue) %>% as.matrix(),
-                   y = data2[,order(names(data2))] %>% select(revenue) %>% as.matrix())
+model %>% evaluate(x = data2 %>% select(-revenue) %>% as.matrix(),
+                   y = data2 %>% select(revenue) %>% as.matrix())
 
-                                                                             
+((model %>% predict_on_batch(data2 %>% dplyr::select(-revenue) %>% as.matrix())
+  - data2$revenue)/data2$revenue) %>% head(100) %>% plot()
+
+###compare against mean revenue per trip as a simple heuristic###
+mean2016 = mean(data$revenue/data$total)
+pred_revenue = data2$total * mean2016
+(pred_revenue - data2$revenue)^2 %>% mean()
