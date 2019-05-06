@@ -2,13 +2,24 @@ library(dplyr)
 library(keras)
 library(readr)
 library(ggplot2)
+library(fastDummies)
 
-data = read.csv("/home/raphael/Documents/AppliedAnalytics/Project/weekly_stats_2017_nonzero_perc.csv") %>% dplyr::select(-X,-sampleId,-company)
 
-###remove outliers###
-quantiles = quantile(data$revenue)
-maxval = quantiles[2] + 1.5 * (quantiles[2]-quantiles[1])
-data = data %>% filter(revenue <= maxval)
+prepare_data = function(data){
+  company_binary <- fastDummies::dummy_cols(data$company)
+  company_binary$.data = NULL
+  prepared_data = data[,order(names(data))] %>% select(-company) %>% cbind(company_binary)
+  
+  ###remove outliers###
+  quantiles = quantile(data$revenue)
+  maxval = quantiles[2] + 1.5 * (quantiles[2]-quantiles[1])
+  return(prepared_data %>% filter(revenue <= maxval))
+}
+
+
+data = read.csv("/home/raphael/Documents/AppliedAnalytics/Project/weekly_stats_2016_nonzero_perc.csv") %>%
+  dplyr::select(-X,-sampleId) %>%
+  prepare_data()
 
 ###split dataset###
 size = nrow(data)
@@ -28,8 +39,7 @@ model %>% layer_dense(units = 64, activation = 'sigmoid', input_shape = n_featur
 
 model %>% compile(
   optimizer = optimizer_nadam(),
-  loss = 'mse',
-  metrics = 'mape'
+  loss = 'mse'
 )
 
 inner_epochs = 40
@@ -45,10 +55,24 @@ model %>% fit(
   validation_split = 0.2)
 
 ###test neural network###
-model %>% evaluate(x = test_data %>% dplyr::select(-revenue) %>% as.matrix(), y = test_data %>% dplyr::select(revenue) %>% as.matrix())
-((model %>% predict_on_batch(test_data %>% dplyr::select(-revenue) %>% as.matrix()) - test_data$revenue)/test_data$revenue) %>% head(100) %>% plot()
+model %>% evaluate(x = test_data %>% dplyr::select(-revenue) %>% as.matrix(),
+                   y = test_data %>% dplyr::select(revenue) %>% as.matrix())
 
-data2 = read.csv("/home/raphael/Documents/AppliedAnalytics/Project/weekly_stats_2017_nonzero.csv") %>% select(-X,-sampleId,-company)
-model %>% evaluate(x = data2 %>% select(-revenue) %>% as.matrix(), y = data2 %>% select(revenue) %>% as.matrix())
+((model %>% predict_on_batch(test_data %>% dplyr::select(-revenue) %>% as.matrix())
+  - test_data$revenue)/test_data$revenue) %>% head(100) %>% plot()
+
+
+data2 = read.csv("/home/raphael/Documents/AppliedAnalytics/Project/weekly_stats_2017_nonzero_perc.csv") %>%
+  select(-X,-sampleId) %>%
+  prepare_data()
+
+for(x in setdiff(names(data),names(data2))){
+  data2[x] = rep(0,nrow(data2))
+}
+for(x in setdiff(names(data2),names(data))){
+  data2[x] = NULL
+}
+model %>% evaluate(x = data2[,order(names(data2))] %>% select(-revenue) %>% as.matrix(),
+                   y = data2[,order(names(data2))] %>% select(revenue) %>% as.matrix())
 
                                                                              
