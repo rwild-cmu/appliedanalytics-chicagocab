@@ -3,7 +3,7 @@ library(keras)
 library(readr)
 library(ggplot2)
 
-data = read.csv("/home/raphael/Documents/AppliedAnalytics/Project/weekly_stats_2017_nonzero_perc.csv") %>% dplyr::select(-X,-sampleId,-company)
+data = read.csv("/home/raphael/Documents/AppliedAnalytics/Project/weekly_stats_2016_nonzero_perc.csv") %>% dplyr::select(-X,-sampleId,-company)
 
 ###remove outliers###
 quantiles = quantile(data$revenue)
@@ -28,8 +28,7 @@ model %>% layer_dense(units = 64, activation = 'sigmoid', input_shape = n_featur
 
 model %>% compile(
   optimizer = optimizer_nadam(),
-  loss = 'mse',
-  metrics = 'mape'
+  loss = 'mse'
 )
 
 inner_epochs = 40
@@ -48,7 +47,7 @@ model %>% fit(
 model %>% evaluate(x = test_data %>% dplyr::select(-revenue) %>% as.matrix(), y = test_data %>% dplyr::select(revenue) %>% as.matrix())
 ((model %>% predict_on_batch(test_data %>% dplyr::select(-revenue) %>% as.matrix()) - test_data$revenue)/test_data$revenue) %>% head(100) %>% plot()
 
-data2 = read.csv("/home/raphael/Documents/AppliedAnalytics/Project/weekly_stats_2017_nonzero.csv") %>% select(-X,-sampleId,-company)
+data2 = read.csv("/home/raphael/Documents/AppliedAnalytics/Project/weekly_stats_2017_nonzero_perc.csv") %>% select(-X,-sampleId,-company)
 model %>% evaluate(x = data2 %>% select(-revenue) %>% as.matrix(), y = data2 %>% select(revenue) %>% as.matrix())
 
                                                                              
