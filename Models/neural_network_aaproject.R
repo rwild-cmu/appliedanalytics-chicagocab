@@ -3,23 +3,23 @@ library(keras)
 library(readr)
 library(ggplot2)
 
-prepare_data = function(data){
-  ###remove outliers###
+remove_outliers = function(data){
   quantiles = quantile(data$revenue)
   maxval = quantiles[2] + 1.5 * (quantiles[2]-quantiles[1])
   return(data %>% filter(revenue <= maxval))
 }
 
 
-data = read.csv("/home/raphael/Documents/AppliedAnalytics/Project/weekly_stats_2016_nonzero_perc.csv") %>%
+data = read.csv("/home/raphael/Documents/AppliedAnalytics/Project/weekly_stats_2016_perc.csv") %>%
   dplyr::select(-X,-sampleId) %>%
-  prepare_data()
+  remove_outliers()
 
 ###split dataset###
 size = nrow(data)
 train_size = 0.8 * size
 n_feature = ncol(data) - 1
-traini = sample.int(n = size,size=train_size)
+set.seed(95845)
+traini = sample(1:size,0.8*size)
 train_data = data[traini,]
 test_data = data[-traini,]
 
@@ -58,7 +58,7 @@ model %>% evaluate(x = test_data %>% dplyr::select(-revenue) %>% as.matrix(),
 
 data2 = read.csv("/home/raphael/Documents/AppliedAnalytics/Project/weekly_stats_2017_nonzero_perc.csv") %>%
   select(-X,-sampleId) %>%
-  prepare_data()
+  remove_outliers()
 
 model %>% evaluate(x = data2 %>% select(-revenue) %>% as.matrix(),
                    y = data2 %>% select(revenue) %>% as.matrix())
@@ -68,5 +68,5 @@ model %>% evaluate(x = data2 %>% select(-revenue) %>% as.matrix(),
 
 ###compare against mean revenue per trip as a simple heuristic###
 mean2016 = mean(data$revenue/data$total)
-pred_revenue = data2$total * mean2016
-(pred_revenue - data2$revenue)^2 %>% mean()
+pred_revenue = data$total * mean2016
+(pred_revenue - data$revenue)^2 %>% mean()
