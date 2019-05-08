@@ -14,20 +14,20 @@ lapply(packages, require, character.only=TRUE)
 rm(packages)
 
 
-# Data 2017 -----
-#Import dataa and remove outliers
-df <- read.csv("weekly_stats_2017_nonzero.csv")
-quantiles = quantile(df$revenue)
+# Using 2016 as training and 2017 as testing set ------
+#dftrain <- read.csv("weekly_stats_2016_nonzero_perc.csv")  #percentage
+dftrain <- read.csv("weekly_stats_nonzero_2016.csv")    #absolute values
+quantiles = quantile(dftrain$revenue)
 maxval = quantiles[2] + 1.5 * (quantiles[2]-quantiles[1])
-df = df %>% filter(revenue <= maxval)
+dftrain = dftrain %>% filter(revenue <= maxval)
+#dftest <- read.csv("weekly_stats_2017_nonzero_perc.csv")   #percentage
+dftest <- read.csv("weekly_stats_nonzero_2017.csv")   #absolute values
+quantiles = quantile(dftest$revenue)
+maxval = quantiles[2] + 1.5 * (quantiles[2]-quantiles[1])
+dftest = dftest %>% filter(revenue <= maxval)
+dftrain <- dftrain %>% select(-X, -sampleId)
+dftest <- dftest %>% select(-X, -sampleId)
 rm(maxval, quantiles)
-
-#Split in training/testing
-set.seed(95845)
-train_index <- sample(round(nrow(df)*.70)) 
-dftrain <- df %>% select(-X, -sampleId) %>% slice(train_index)
-dftest <- df %>% select(-X, -sampleId) %>% slice(-train_index)
-rm(train_index)
 
 #Parameter tuning
 set.seed(95845)
@@ -35,7 +35,7 @@ kfolds = 5
 folds_index <- createFolds(dftrain$revenue, k = kfolds) #create k folds indices
 best_mse <- Inf
 best_param <- NA
-param <- expand.grid(mtry = c(10,20,30), min.node.size = c(5,15,25)) #tuning parameters
+param <- expand.grid(mtry = c(10,20,30), min.node.size = c(5,15)) #tuning parameters
 dfmse <- data.frame(mse = NA, fold = NA, mtry = NA, min.node.size = NA) #to keep track of the mse of each fold
 counter <- 1
 for (i in 1:nrow(param)){
@@ -70,10 +70,11 @@ rm(kfolds, folds_index, counter, test_index, cvtrain, cvtest, mse, mse_folds, f,
 #Visualize how the mse changes across different parameters
 plot(dfmse$mtry, dfmse$mse)
 plot(dfmse$min.node.size, dfmse$mse)
+best_param #best model
 
 #Build best model
 clf_rf <- ranger(revenue~., data = dftrain, num.trees = 100, splitrule = "variance",
-                 mtry = best_param$mtry, min.node.size = best_param$min.node.size)
+                 mtry = best_param$mtry, min.node.size = best_param$min.node.size, importance = "impurity")
 
 #Measure performance
 pred_rf <- predict(clf_rf, data = dftest %>% select(-revenue))
@@ -82,13 +83,17 @@ paste0("MSE Random Forest: ", round(mse_rf, digits = 2))
 
 #Plot predicted vs truth
 dfplot <- data.frame("truth" = dftest$revenue, "prediction" = pred_rf$predictions)
-ggplot(dfplot, aes(x = truth, y = prediction)) +
-  geom_point(alpha=0.2, color = "darkgreen", size = 0.4) +
-  theme_bw() +
-  xlim(0,660) +
-  ylim(0,660) +
-  geom_abline(intercept = 0, slope = 1, linetype = "dashed")
-
+p <- ggplot(dfplot, aes(x = truth, y = prediction)) +
+  geom_point(alpha = 0.1, color = "darkgreen", size = 0.2) +
+  xlim(0,700) +
+  ylim(0,800) +
+  geom_abline(intercept = 0, slope = 1, linetype = "dashed") +
+  labs(x = "Observed revenue ($/week)",
+       y = "Predicted revenue ($/week)") +
+  theme(panel.background = element_blank(), axis.line = element_line(colour = "black"),
+        axis.title.x = element_text(size = 14), axis.title.y = element_text(size = 14),
+        axis.text.x = element_text(size = 12), axis.text.y = element_text(size = 12))
+ggsave("Plot_predicted_observed.jpg", plot = p, width = 4, height = 4, dpi = 300)
 
 
 
