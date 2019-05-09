@@ -1,0 +1,184 @@
+---
+title: "Regression_group_project"
+author: "Group 6"
+date: "April 14, 2019"
+output: html_document
+---
+
+
+***********Model for datasets with percentage features*************
+
+```{r}
+library(MASS) 
+library(glmnet) 
+library(dplyr)
+
+
+## read datasets with percentage features
+dataset_2016 <- read.csv("./weekly_stats_2016_nonzero_perc.csv")
+dataset_2017 <- read.csv("./weekly_stats_2017_nonzero_perc.csv")
+
+## remove outliers
+quantiles_2016 = quantile(dataset_2016$revenue)
+maxval_2016 = quantiles_2016[2] + 1.5 * (quantiles_2016[2]-quantiles_2016[1])
+dataset_2016_n = dataset_2016 %>% filter(revenue <= maxval_2016)
+
+quantiles_2017 = quantile(dataset_2017$revenue)
+maxval_2017 = quantiles_2017[2] + 1.5 * (quantiles_2017[2]-quantiles_2017[1])
+dataset_2017_n = dataset_2017 %>% filter(revenue <= maxval_2017)
+
+
+# select out column to prepare for linear regression
+newdataset_2016 <- dataset_2016_n %>% dplyr::select(-X,-sampleId) 
+newdataset_2016_train_x <- dataset_2016_n %>% dplyr::select(-X,-sampleId, -revenue) %>% as.data.frame() 
+newdataset_2016_train_y <- dataset_2016_n %>% dplyr::select(revenue) %>% as.data.frame() %>% unlist() 
+newdataset_2017_test_x <- dataset_2017_n %>% dplyr::select(-X,-sampleId, -revenue) %>% as.data.frame() 
+newdataset_2017_test_y <- dataset_2017_n %>% dplyr::select(revenue) %>% as.data.frame() 
+
+
+## linear regression
+lm_revenue <- lm(revenue~., data = newdataset_2016)
+print(summary(lm_revenue))
+
+## function to caluculate linear model's mse
+mse <- function(sm){mean(sm$residuals^2)}
+#show linear model's mse on training 2016 datasets
+mse(lm_revenue)
+
+##calculate mse for linear model on 2017 testing datasets
+yhat_lm <- predict(lm_revenue, newdata =  newdataset_2017_test_x)
+mse_lm_percentage <- mean((newdataset_2017_test_y - yhat_lm)^2)
+mse_lm_percentage
+
+
+
+## prepare datasets for regulization regression
+newdataset_2016_train_x <- dataset_2016_n %>% dplyr::select(-X,-sampleId, -revenue) %>% as.matrix()
+newdataset_2016_train_y <- dataset_2016_n %>% dplyr::select(revenue) %>% as.matrix()
+newdataset_2017_test_x <- dataset_2017_n %>% dplyr::select(-X,-sampleId, -revenue) %>% as.matrix()
+newdataset_2017_test_y <- dataset_2017_n %>% dplyr::select(revenue) %>%  as.matrix()
+
+## regulization (Conducted ridge, lasso, Elastic Net regression below with alpah from 0 to 1)
+for (i in 0:10) {
+    assign(paste("fit", i, sep=""), cv.glmnet(newdataset_2016_train_x, newdataset_2016_train_y, type.measure="mse", 
+                                              alpha=i/10,family="gaussian"))
+}
+
+yhat0 <- predict(fit0, s=fit0$lambda.1se, newx=newdataset_2017_test_x)
+yhat1 <- predict(fit1, s=fit1$lambda.1se, newx=newdataset_2017_test_x)
+yhat2 <- predict(fit2, s=fit2$lambda.1se, newx=newdataset_2017_test_x)
+yhat3 <- predict(fit3, s=fit3$lambda.1se, newx=newdataset_2017_test_x)
+yhat4 <- predict(fit4, s=fit4$lambda.1se, newx=newdataset_2017_test_x)
+yhat5 <- predict(fit5, s=fit5$lambda.1se, newx=newdataset_2017_test_x)
+yhat6 <- predict(fit6, s=fit6$lambda.1se, newx=newdataset_2017_test_x)
+yhat7 <- predict(fit7, s=fit7$lambda.1se, newx=newdataset_2017_test_x)
+yhat8 <- predict(fit8, s=fit8$lambda.1se, newx=newdataset_2017_test_x)
+yhat9 <- predict(fit9, s=fit9$lambda.1se, newx=newdataset_2017_test_x)
+yhat10 <- predict(fit10, s=fit10$lambda.1se, newx=newdataset_2017_test_x)
+
+##calculate mse for each model with different alpha
+mse0 <- mean((newdataset_2017_test_y - yhat0)^2)
+mse1 <- mean((newdataset_2017_test_y - yhat1)^2)
+mse2 <- mean((newdataset_2017_test_y - yhat2)^2)
+mse3 <- mean((newdataset_2017_test_y - yhat3)^2)
+mse4 <- mean((newdataset_2017_test_y - yhat4)^2)
+mse5 <- mean((newdataset_2017_test_y - yhat5)^2)
+mse6 <- mean((newdataset_2017_test_y - yhat6)^2)
+mse7 <- mean((newdataset_2017_test_y - yhat7)^2)
+mse8 <- mean((newdataset_2017_test_y - yhat8)^2)
+mse9 <- mean((newdataset_2017_test_y - yhat9)^2)
+mse10 <- mean((newdataset_2017_test_y - yhat10)^2)
+
+## show mse for linear regression model and regulization models (with alpah from 0 to 1)
+cbind(mse_lm_percentage,mse0,mse1,mse2,mse3,mse4,mse5,mse6, mse7, mse8, mse9, mse10)
+```
+
+
+***********Model for datasets with absolute value features*************
+
+
+```{r}
+library(MASS) 
+library(glmnet) 
+library(dplyr)
+
+## read datasets with absolute value features
+dataset_2016_oo <- read.csv("./weekly_stats_nonzero_2016.csv")
+dataset_2017_oo <- read.csv("./weekly_stats_nonzero_2017.csv")
+
+## remove outliers
+
+quantiles_2016 = quantile(dataset_2016_oo$revenue)
+maxval_2016 = quantiles_2016[2] + 1.5 * (quantiles_2016[2]-quantiles_2016[1])
+dataset_2016_oo = dataset_2016_oo %>% filter(revenue <= maxval_2016)
+
+quantiles_2017 = quantile(dataset_2017_oo$revenue)
+maxval_2017 = quantiles_2017[2] + 1.5 * (quantiles_2017[2]-quantiles_2017[1])
+dataset_2017_oo = dataset_2017_oo %>% filter(revenue <= maxval_2017)
+
+
+## select out column to prepare for linear regression
+newdataset_2016 <- dataset_2016_oo %>% dplyr::select(-X,-sampleId) 
+newdataset_2016_train_x <- dataset_2016_oo %>% dplyr::select(-X,-sampleId, -revenue) %>% as.data.frame() 
+newdataset_2016_train_y <- dataset_2016_oo %>% dplyr::select(revenue) %>% as.data.frame() %>% unlist() 
+newdataset_2017_test_x <- dataset_2017_oo %>% dplyr::select(-X,-sampleId, -revenue) %>% as.data.frame() 
+newdataset_2017_test_y <- dataset_2017_oo %>% dplyr::select(revenue) %>% as.data.frame() 
+
+## linear regression
+lm_revenue <- lm(revenue~., data = newdataset_2016)
+print(summary(lm_revenue))
+## calculate mse for linear regression model on 2016 training datasets
+mse(lm_revenue)
+## calculate mse for linear regression model on 2017 testing datasets
+yhat_lm <- predict(lm_revenue, newdata =  newdataset_2017_test_x)
+mse_lm_abs <- mean((newdataset_2017_test_y - yhat_lm)^2)
+mse_lm_abs
+
+
+
+## prepare datasets for regulization regression
+newdataset_2016_train_x <- dataset_2016_n %>% dplyr::select(-X,-sampleId, -revenue) %>% as.matrix()
+newdataset_2016_train_y <- dataset_2016_n %>% dplyr::select(revenue) %>% as.matrix()
+newdataset_2017_test_x <- dataset_2017_n %>% dplyr::select(-X,-sampleId, -revenue) %>% as.matrix()
+newdataset_2017_test_y <- dataset_2017_n %>% dplyr::select(revenue) %>%  as.matrix()
+
+
+## regulization (Conducted ridge, lasso, Elastic Net regression below with alpah from 0 to 1)
+for (i in 0:10) {
+    assign(paste("fit", i, sep=""), cv.glmnet(newdataset_2016_train_x, newdataset_2016_train_y, type.measure="mse", 
+                                              alpha=i/10,family="gaussian"))
+}
+
+yhat0 <- predict(fit0, s=fit0$lambda.1se, newx=newdataset_2017_test_x)
+yhat1 <- predict(fit1, s=fit1$lambda.1se, newx=newdataset_2017_test_x)
+yhat2 <- predict(fit2, s=fit2$lambda.1se, newx=newdataset_2017_test_x)
+yhat3 <- predict(fit3, s=fit3$lambda.1se, newx=newdataset_2017_test_x)
+yhat4 <- predict(fit4, s=fit4$lambda.1se, newx=newdataset_2017_test_x)
+yhat5 <- predict(fit5, s=fit5$lambda.1se, newx=newdataset_2017_test_x)
+yhat6 <- predict(fit6, s=fit6$lambda.1se, newx=newdataset_2017_test_x)
+yhat7 <- predict(fit7, s=fit7$lambda.1se, newx=newdataset_2017_test_x)
+yhat8 <- predict(fit8, s=fit8$lambda.1se, newx=newdataset_2017_test_x)
+yhat9 <- predict(fit9, s=fit9$lambda.1se, newx=newdataset_2017_test_x)
+yhat10 <- predict(fit10, s=fit10$lambda.1se, newx=newdataset_2017_test_x)
+
+##calculate mse for each model with different alpha
+mse0 <- mean((newdataset_2017_test_y - yhat0)^2)
+mse1 <- mean((newdataset_2017_test_y - yhat1)^2)
+mse2 <- mean((newdataset_2017_test_y - yhat2)^2)
+mse3 <- mean((newdataset_2017_test_y - yhat3)^2)
+mse4 <- mean((newdataset_2017_test_y - yhat4)^2)
+mse5 <- mean((newdataset_2017_test_y - yhat5)^2)
+mse6 <- mean((newdataset_2017_test_y - yhat6)^2)
+mse7 <- mean((newdataset_2017_test_y - yhat7)^2)
+mse8 <- mean((newdataset_2017_test_y - yhat8)^2)
+mse9 <- mean((newdataset_2017_test_y - yhat9)^2)
+mse10 <- mean((newdataset_2017_test_y - yhat10)^2)
+
+## show mse for linear regression model and regulization models (with alpah from 0 to 1)
+cbind(mse_lm_abs,mse0,mse1,mse2,mse3,mse4,mse5,mse6, mse7, mse8, mse9, mse10)
+```
+
+
+
+
+
