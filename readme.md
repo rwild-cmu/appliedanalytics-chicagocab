@@ -13,5 +13,8 @@ Folder description:
 - Proposal: includes project proposal
 - Preprocessing: includes codes to clean and aggregate the data.
 - Modeling: includes codes used to train the machine learning models.
+- Cleaned Data: includes 2016 and 2017 datasets with absolute value features but not includes 2016 and 2017 datasets with percentage features due to memory size restrictions.
+- Overleaf Files: includes all the files created and needed in Overleaf project.
+- Final Paper: includes pdf file for the final paper.
 
 Note: the raw data was not included due to memory size restrictions. They are available upon request.
